@@ -14,6 +14,7 @@ var (
 type PaymentRepository interface {
 	ClaimIdempotencyKey(key string) (*models.Order, error)
 	SaveIdempotencyKey(key string, order *models.Order) error
+	ReleaseIdempotencyKey(key string) error
 }
 
 type paymentRepoImpl struct {
@@ -49,5 +50,12 @@ func (r *paymentRepoImpl) SaveIdempotencyKey(key string, order *models.Order) er
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.idempotencyCache[key] = order
+	return nil
+}
+
+func (r *paymentRepoImpl) ReleaseIdempotencyKey(key string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.idempotencyCache, key)
 	return nil
 }

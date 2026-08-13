@@ -9,8 +9,9 @@ import (
 )
 
 type MockPaymentRepository struct {
-	ClaimIdempotencyKeyFn func(key string) (*models.Order, error)
-	SaveIdempotencyKeyFn  func(key string, order *models.Order) error
+	ClaimIdempotencyKeyFn   func(key string) (*models.Order, error)
+	SaveIdempotencyKeyFn    func(key string, order *models.Order) error
+	ReleaseIdempotencyKeyFn func(key string) error
 }
 
 func (m *MockPaymentRepository) ClaimIdempotencyKey(key string) (*models.Order, error) {
@@ -22,6 +23,12 @@ func (m *MockPaymentRepository) ClaimIdempotencyKey(key string) (*models.Order, 
 func (m *MockPaymentRepository) SaveIdempotencyKey(key string, order *models.Order) error {
 	if m.SaveIdempotencyKeyFn != nil {
 		return m.SaveIdempotencyKeyFn(key, order)
+	}
+	return nil
+}
+func (m *MockPaymentRepository) ReleaseIdempotencyKey(key string) error {
+	if m.ReleaseIdempotencyKeyFn != nil {
+		return m.ReleaseIdempotencyKeyFn(key)
 	}
 	return nil
 }

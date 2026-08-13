@@ -11,6 +11,7 @@ import (
 var (
 	ErrPaymentFailed = errors.New("payment failed mock")
 	ErrUnauthorized  = errors.New("unauthorized to process payment for this cart")
+	ErrInvalidIdempotencyKey = errors.New("invalid idempotency key")
 )
 
 type PaymentService interface {
@@ -32,6 +33,10 @@ func NewPaymentService(repo repositories.PaymentRepository, orderSvc OrderServic
 }
 
 func (s *paymentServiceImpl) MakePayment(cartID string, idempotencyKey string, userID string) (*models.Order, error) {
+	if idempotencyKey == "" {
+		return nil, ErrInvalidIdempotencyKey
+	}
+
 	// 1. Atomic Idempotency Claim
 	order, err := s.repo.ClaimIdempotencyKey(idempotencyKey)
 	if err != nil {
@@ -66,9 +71,12 @@ func (s *paymentServiceImpl) MakePayment(cartID string, idempotencyKey string, u
 	// 5. Handle Failure
 	if !paymentSuccess {
 		_ = s.orderSvc.UpdateCartStatus(cartID, models.PaymentProcessing, models.PaymentFailed)
-		
+
 		// Release inventory
 		_ = s.inventorySvc.Release(cart.ItemID, cart.Quantity)
+		
+		// Release idempotency key so client can retry
+		_ = s.repo.ReleaseIdempotencyKey(idempotencyKey)
 		
 		return nil, ErrPaymentFailed
 	}
@@ -80,6 +88,9 @@ func (s *paymentServiceImpl) MakePayment(cartID string, idempotencyKey string, u
 	}
 
 	// 7. Save final Order to Idempotency Cache
+	// Note: In production, order creation and idempotency-key persistence 
+	// should use a database transaction / unique constraint, or an 
+	// equivalent durable atomic mechanism to prevent race conditions during crashes.
 	_ = s.repo.SaveIdempotencyKey(idempotencyKey, order)
 
 	return order, nil

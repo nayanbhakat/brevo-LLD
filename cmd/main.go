@@ -47,7 +47,8 @@ func main() {
 	var wg sync.WaitGroup
 	numUsers := 50000
 
-	var successfulCarts int
+	var successfulReservations int
+	var successfulOrders int
 	var mu sync.Mutex
 
 	for i := 0; i < numUsers; i++ {
@@ -65,12 +66,17 @@ func main() {
 			}
 			
 			mu.Lock()
-			successfulCarts++
+			successfulReservations++
 			mu.Unlock()
 
 			// Try to pay immediately
 			idempKey := fmt.Sprintf("pay_key_%s", cart.ID)
-			_, _ = paySvc.MakePayment(cart.ID, idempKey, uID)
+			_, err = paySvc.MakePayment(cart.ID, idempKey, uID)
+			if err == nil {
+				mu.Lock()
+				successfulOrders++
+				mu.Unlock()
+			}
 		}(i)
 	}
 
@@ -80,12 +86,13 @@ func main() {
 	fmt.Println("---------------------------------------------------")
 	fmt.Println("Simulation Complete!")
 	fmt.Printf("Total Concurrent Requests: %d\n", numUsers)
-	fmt.Printf("Successful Cart Reservations: %d\n", successfulCarts)
+	fmt.Printf("Successful Cart Reservations: %d\n", successfulReservations)
+	fmt.Printf("Successful Orders: %d\n", successfulOrders)
 	
 	finalStock, _ := invSvc.GetAvailableStock("item_flash_1")
 	fmt.Printf("Final Available Stock: %d\n", finalStock)
 
-	if finalStock == 0 && successfulCarts == 500 {
+	if finalStock == 0 && successfulReservations == 500 && successfulOrders == 500 {
 		fmt.Println("SUCCESS: System successfully prevented overselling!")
 	} else {
 		fmt.Println("ERROR: System failed to maintain consistency.")
