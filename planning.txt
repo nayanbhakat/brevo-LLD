@@ -1,0 +1,65 @@
+package brevo
+
+/*
+
+Problem Statement:
+Design the checkout system for a flash sale.
+
+A merchant is selling 500 units of a limited-edition item. At 12:00:00 PM, 50,000 shoppers simultaneously land on the product page and hit "Buy Now."
+
+Requirements to design for:
+- Never oversell: at most 500 successful purchases, even under massive concurrent load
+- A shopper who adds the item to their cart should get a short reservation window (e.g. 5 minutes) to complete checkout before the stock is released back
+- Payment can fail or time out after stock was reserved — stock must be released, not lost, if checkout doesn't complete
+- The system must stay responsive (no long queues/timeouts) even at 50k concurrent requests against 500 units
+
+
+Functional Requirements:
+	- inventory system having items (eg: 500 units)
+	- order service (should able to order an item & add to a cart with TTL 5 mins (have active/passive go routine) to remove the exp and if within 5 mins, the payment is not done the card should be released having all the items)
+	- payment service (should mock payment)
+
+Non-Functional Requirements:
+	- thread safety
+	- Availability
+	- Scalable
+	- Low Latency
+	- Strong Consistency
+
+APIs/ Public Methods:
+	- List Products (should list the product with pagination)
+	- Add product to a cart
+	- Make payment
+
+
+Models/ Entities:
+	- item (id, SKU, name, price)
+	- order (id, name)
+	- cart (id, items)
+
+folder structure:
+	cmd
+		- main.go
+	internal
+		- models
+			- models.go
+		- services
+			- inventory.go
+			- order.go
+			- payment.go
+		- repositories
+			- inventory.go
+			- order.go
+			- payment.go
+
+
+DB:
+	id  name   qty
+	1   phone  2
+	2   bottle 1
+
+LLD:
+HLD:
+
+
+*/
